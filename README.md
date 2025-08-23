@@ -107,6 +107,31 @@ This setting:
      - Sets MLX LM for language model
      - Sets MeloTTS for TTS
 
+### OpenAI-Compatible API
+
+This project also provides OpenAI-compatible endpoints for STT and TTS.
+
+1.  Run the server with the `openai` API:
+    ```bash
+    python s2s_pipeline.py --api openai --recv_host 0.0.0.0
+    ```
+    You can also specify the STT and TTS models to use, for example:
+    ```bash
+    python s2s_pipeline.py --api openai --stt faster-whisper --tts melo --recv_host 0.0.0.0
+    ```
+
+2.  Use the STT endpoint:
+    ```bash
+    curl -X POST -F "file=@/path/to/your/audio.wav" http://localhost:8008/v1/audio/transcriptions
+    ```
+
+3.  Use the TTS endpoint:
+    ```bash
+    curl -X POST -H "Content-Type: application/json" \
+         -d '{"model": "parler-tts/parler-mini-v1-jenny", "input": "Hello, world!", "voice": "jenny"}' \
+         http://localhost:8008/v1/audio/speech --output output.wav
+    ```
+
 ### Docker Server
 
 #### Install the NVIDIA Container Toolkit
@@ -195,6 +220,7 @@ python s2s_pipeline.py \
 See [ModuleArguments](https://github.com/huggingface/speech-to-speech/blob/d5e460721e578fef286c7b64e68ad6a57a25cf1b/arguments_classes/module_arguments.py) class. Allows to set:
 - a common `--device` (if one wants each part to run on the same device)
 - `--mode` `local` or `server`
+- `--api` `websockets` or `openai`
 - chosen STT implementation 
 - chosen LM implementation
 - chose TTS implementation

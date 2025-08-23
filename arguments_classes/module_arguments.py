@@ -14,6 +14,12 @@ class ModuleArguments:
             "help": "The mode to run the pipeline in. Either 'local' or 'socket'. Default is 'socket'."
         },
     )
+    api: Optional[str] = field(
+        default="websockets",
+        metadata={
+            "help": "The API to run. Either 'websockets' or 'openai'. Default is 'websockets'."
+        },
+    )
     local_mac_optimal_settings: bool = field(
         default=False,
         metadata={

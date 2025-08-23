@@ -453,30 +453,51 @@ def main():
         facebook_mms_tts_handler_kwargs,
     )
 
-    queues_and_events = initialize_queues_and_events()
+    if module_kwargs.api == "openai":
+        import uvicorn
+        from openai_api import app, stt_handler, tts_handler
 
-    pipeline_manager = build_pipeline(
-        module_kwargs,
-        socket_receiver_kwargs,
-        socket_sender_kwargs,
-        vad_handler_kwargs,
-        whisper_stt_handler_kwargs,
-        faster_whisper_stt_handler_kwargs,  # Add this line
-        paraformer_stt_handler_kwargs,
-        language_model_handler_kwargs,
-        open_api_language_model_handler_kwargs,
-        mlx_language_model_handler_kwargs,
-        parler_tts_handler_kwargs,
-        melo_tts_handler_kwargs,
-        chat_tts_handler_kwargs,
-        facebook_mms_tts_handler_kwargs,
-        queues_and_events,
-    )
+        queues_and_events = initialize_queues_and_events()
+        stop_event = queues_and_events["stop_event"]
+        spoken_prompt_queue = queues_and_events["spoken_prompt_queue"]
+        text_prompt_queue = queues_and_events["text_prompt_queue"]
+        lm_response_queue = queues_and_events["lm_response_queue"]
+        send_audio_chunks_queue = queues_and_events["send_audio_chunks_queue"]
+        should_listen = queues_and_events["should_listen"]
 
-    try:
-        pipeline_manager.start()
-    except KeyboardInterrupt:
-        pipeline_manager.stop()
+        stt_handler_instance = get_stt_handler(module_kwargs, stop_event, spoken_prompt_queue, text_prompt_queue, whisper_stt_handler_kwargs, faster_whisper_stt_handler_kwargs, paraformer_stt_handler_kwargs)
+        tts_handler_instance = get_tts_handler(module_kwargs, stop_event, lm_response_queue, send_audio_chunks_queue, should_listen, parler_tts_handler_kwargs, melo_tts_handler_kwargs, chat_tts_handler_kwargs, facebook_mms_tts_handler_kwargs)
+
+        stt_handler["handler"] = stt_handler_instance
+        tts_handler["handler"] = tts_handler_instance
+
+        uvicorn.run(app, host=socket_receiver_kwargs.recv_host, port=socket_receiver_kwargs.recv_port)
+
+    else:
+        queues_and_events = initialize_queues_and_events()
+
+        pipeline_manager = build_pipeline(
+            module_kwargs,
+            socket_receiver_kwargs,
+            socket_sender_kwargs,
+            vad_handler_kwargs,
+            whisper_stt_handler_kwargs,
+            faster_whisper_stt_handler_kwargs,
+            paraformer_stt_handler_kwargs,
+            language_model_handler_kwargs,
+            open_api_language_model_handler_kwargs,
+            mlx_language_model_handler_kwargs,
+            parler_tts_handler_kwargs,
+            melo_tts_handler_kwargs,
+            chat_tts_handler_kwargs,
+            facebook_mms_tts_handler_kwargs,
+            queues_and_events,
+        )
+
+        try:
+            pipeline_manager.start()
+        except KeyboardInterrupt:
+            pipeline_manager.stop()
 
 
 if __name__ == "__main__":
